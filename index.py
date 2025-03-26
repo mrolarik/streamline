@@ -1,10 +1,6 @@
 import streamlit as st
-from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predictions, preprocess_input
 from PIL import Image
 import numpy as np
-
-# Load model
-model = MobileNetV2(weights="imagenet")
 
 st.title("Image Classification App")
 st.write("Upload an image and let the model classify it")
@@ -21,10 +17,4 @@ if uploaded_file is not None:
     img_array = np.expand_dims(img_array, axis=0)
     img_array = preprocess_input(img_array)
 
-    # Predict
-    predictions = model.predict(img_array)
-    decoded_preds = decode_predictions(predictions, top=3)[0]
-
-    st.write("### Predictions:")
-    for i, (imagenet_id, label, prob) in enumerate(decoded_preds):
-        st.write(f"{i+1}. {label} ({prob*100:.2f}%)")
+    
