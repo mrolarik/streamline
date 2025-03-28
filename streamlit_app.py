@@ -6,7 +6,7 @@ from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predi
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+#import cv2
 
 from PIL import ImageEnhance
 import matplotlib.cm as cm
