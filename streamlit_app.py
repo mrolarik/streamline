@@ -28,6 +28,11 @@ if uploaded_file is not None:
     predictions = model.predict(img_array)
     decoded_preds = decode_predictions(predictions, top=3)[0]
 
-    st.write("### Predictions:")
+    st.write("### Predictions (Top 3):")
     for i, (imagenet_id, label, prob) in enumerate(decoded_preds):
-        st.write(f"{i+1}. {label} ({prob*100:.2f}%)")
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.write(f"**{label}**")
+        with col2:
+            st.progress(int(prob * 100))
+        st.write(f"Confidence: {prob*100:.2f}%")
