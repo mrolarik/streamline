@@ -26,9 +26,9 @@ if uploaded_file is not None:
 
     # Predict
     predictions = model.predict(img_array)
-    decoded_preds = decode_predictions(predictions, top=3)[0]
+    decoded_preds = decode_predictions(predictions, top=5)[0]
 
-    st.write("### Predictions (Top 3):")
+    st.write("### Predictions (Top 5):")
     for i, (imagenet_id, label, prob) in enumerate(decoded_preds):
         col1, col2 = st.columns([1, 4])
         with col1:
