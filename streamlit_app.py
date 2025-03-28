@@ -5,6 +5,8 @@ import tensorflow as tf
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predictions, preprocess_input
 from PIL import Image
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
 
 # Load model
 model = MobileNetV2(weights="imagenet")
@@ -19,20 +21,59 @@ if uploaded_file is not None:
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
     # Preprocess image
-    img = image.resize((224, 224))
-    img_array = np.array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+    img_resized = image.resize((224, 224))
+    img_array = np.array(img_resized)
+    img_array_expanded = np.expand_dims(img_array, axis=0)
+    processed_img = preprocess_input(img_array_expanded)
 
     # Predict
-    predictions = model.predict(img_array)
-    decoded_preds = decode_predictions(predictions, top=5)[0]
+    predictions = model.predict(processed_img)
+    decoded_preds = decode_predictions(predictions, top=3)[0]
 
-    st.write("### Predictions (Top 5):")
+    st.write("### Predictions:")
     for i, (imagenet_id, label, prob) in enumerate(decoded_preds):
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.write(f"**{label}**")
-        with col2:
-            st.progress(int(prob * 100))
-        st.write(f"Confidence: {prob*100:.2f}%")
+        st.write(f"**{i+1}. {label}** ({prob*100:.2f}%)")
+        st.progress(int(prob * 100))
+
+    # -------- Grad-CAM --------
+    st.write("### Grad-CAM Visualization")
+
+    # Define a model that maps input image to activations & predictions
+    grad_model = tf.keras.models.Model(
+        [model.inputs],
+        [model.get_layer("Conv_1").output, model.output]
+    )
+
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(processed_img)
+        pred_index = tf.argmax(predictions[0])
+        class_channel = predictions[:, pred_index]
+
+    # Gradient of the output neuron (target class) with respect to feature map
+    grads = tape.gradient(class_channel, conv_outputs)
+
+    # Mean intensity of the gradients for each feature map channel
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # Multiply each channel in the feature map array by its corresponding gradient importance
+    conv_outputs = conv_outputs[0]
+    heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    # Normalize heatmap
+    heatmap = np.maximum(heatmap, 0)
+    heatmap /= tf.reduce_max(heatmap)
+    heatmap = heatmap.numpy()
+
+    # Resize heatmap to original image size
+    heatmap = cv2.resize(heatmap, (image.width, image.height))
+    heatmap = np.uint8(255 * heatmap)
+
+    # Apply heatmap to original image
+    heatmap_colored = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    img_np = np.array(image)
+    superimposed_img = cv2.addWeighted(img_np, 0.6, heatmap_colored, 0.4, 0)
+
+    # Show result
+    st.image(superimposed_img, caption="Grad-CAM Heatmap", use_column_width=True)
+
