@@ -8,6 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
+from PIL import ImageEnhance
+import matplotlib.cm as cm
+
+
 # Load model
 model = MobileNetV2(weights="imagenet")
 
@@ -66,14 +70,29 @@ if uploaded_file is not None:
     heatmap = heatmap.numpy()
 
     # Resize heatmap to original image size
-    heatmap = cv2.resize(heatmap, (image.width, image.height))
-    heatmap = np.uint8(255 * heatmap)
+    #heatmap = cv2.resize(heatmap, (image.width, image.height))
+    #heatmap = np.uint8(255 * heatmap)
 
     # Apply heatmap to original image
-    heatmap_colored = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    img_np = np.array(image)
-    superimposed_img = cv2.addWeighted(img_np, 0.6, heatmap_colored, 0.4, 0)
+    #heatmap_colored = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    #img_np = np.array(image)
+    #superimposed_img = cv2.addWeighted(img_np, 0.6, heatmap_colored, 0.4, 0)
 
     # Show result
-    st.image(superimposed_img, caption="Grad-CAM Heatmap", use_column_width=True)
+    #st.image(superimposed_img, caption="Grad-CAM Heatmap", use_column_width=True)
 
+
+    # Resize heatmap to original image size
+    heatmap_resized = Image.fromarray(np.uint8(255 * heatmap)).resize(image.size)
+    
+    # Apply colormap (use matplotlib colormap)
+    colormap = cm.get_cmap("jet")
+    colored_heatmap = colormap(np.array(heatmap_resized) / 255.0)
+    colored_heatmap = (colored_heatmap[:, :, :3] * 255).astype(np.uint8)
+    colored_heatmap_img = Image.fromarray(colored_heatmap)
+    
+    # Blend original image and heatmap
+    blended = Image.blend(image, colored_heatmap_img, alpha=0.4)
+    
+    # Show result
+    st.image(blended, caption="Grad-CAM Heatmap (No OpenCV)", use_column_width=True)
