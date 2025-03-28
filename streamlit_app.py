@@ -9,7 +9,7 @@ import numpy as np
 # Load model
 model = MobileNetV2(weights="imagenet")
 
-st.title("Image Classification App")
+st.title("Image Classification Application")
 st.write("Upload an image and let the model classify it")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
